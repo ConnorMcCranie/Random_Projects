@@ -31,9 +31,30 @@ def interpolate(x: np.ndarray, y:np.ndarray , name = 'p', ) -> Poly:
     coeff =  np.linalg.inv(A) @ y
     return Poly(coeff, name)
 
+def factorial(n : int) -> int:
+    '''
+    compute the factorial of a number
+    '''
+    if n == 0:
+        return 1
+    else:
+        return n*factorial(n-1)
+
+def  vand_exp(x : np.ndarray) -> np.ndarray:
+    '''
+    create the vandermonde matrix weighted by factorials for a set of points
+    '''
+    n = len(x)
+    A = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            A[i,j] = x[i]**(j)/factorial(j)
+    return A
+
 x = np.array([n for n in range(1,21)])
 y = np.array([1,1,1,2,2,2,3,3,4,4,5,5,6,7,8,9,10,12,15,20])
 t = interpolate(x,y,'t' )
 int_coeffs = [round(c,8) for c in t.coeffs]
 T = Poly(int_coeffs, 'T')
-print(t.poly_str)
+#print(t.poly_str)
+
