@@ -19,7 +19,7 @@ class Polynomial:
             '''
             reduced_coeffs = coeffs
             while len(reduced_coeffs)>1:
-                if reduced_coeffs[-1] == 0:
+                if reduced_coeffs[-1] == 0.0:
                     reduced_coeffs.pop()
                 else:
                     return reduced_coeffs
@@ -31,7 +31,7 @@ class Polynomial:
             '''
             return the degree of a polynomial given its reduced coefficients
             '''
-            if len(coeffs) == 1 and coeffs[0] == 0:
+            if len(coeffs) == 1 and coeffs[0] == 0.0:
                 return -1*np.inf
             else:
                 return len(reduced_coeffs(coeffs)) - 1
@@ -47,21 +47,21 @@ class Polynomial:
             '''
             # check if the polynomial is the zero polynomial
             n = len(self.coeffs)
-            if n == 1 and self.coeffs[0] == 0:
+            if n == 1 and self.coeffs[0] == 0.0:
                 return f'{name} = 0'
             
             # if not, find the first non-zero coefficient
             non_zero : int = 0
-            while self.coeffs[non_zero] == 0:
+            while self.coeffs[non_zero] == 0.0:
                 non_zero += 1
 
             def omit_ones(a : int) -> str:
                 '''
                 omit the coefficient if it is 1
                 '''
-                if a == 1:
+                if a == 1.0:
                     return ''
-                elif a == -1:
+                elif a == -1.0:
                     return '-'
                 else:
                     return str(a)
@@ -76,7 +76,7 @@ class Polynomial:
             
             # write the rest of the polynomial
             for i in range(non_zero + 1, n):
-                if coeffs[i] != 0:
+                if coeffs[i] != 0.0:
                     if i == 1:
                         poly_str += f' + {omit_ones(coeffs[i])}x'
                     else:
@@ -111,17 +111,12 @@ def poly_mult(p : Polynomial, q : Polynomial ) -> Polynomial:
     return Polynomial(prod_coeffs, f'({p.name}{q.name})')
 
 # debugging
-p = Polynomial([1, 1, 1], 'p')
-q = Polynomial([-1, 1, 0,0,0,0,0],'q')
-r = Polynomial([0,0,0])
-s = Polynomial([])
+'''
+p = Polynomial([1, 1.0, 1,0.0], 'p')
+q = Polynomial([0.0,-1, 1, 0,0,0,0,0],'q')
 
-'''
-polys = [p, q, r, s]
-for poly in polys:
-    print(f'The reduced coefficients of {poly} is {poly.coeffs}')
-    print(f'The degree of {poly} is {poly.deg}')
-'''
+
     
 r = poly_add(p, q)
 print(f'The sum of {p.poly_str} and {q.poly_str} is {r.poly_str} and their product is {poly_mult(p, q).poly_str}')
+'''
