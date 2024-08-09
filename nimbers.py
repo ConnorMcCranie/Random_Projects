@@ -15,49 +15,47 @@ def is_fermat_power(n : int) -> bool:
 def nim_sum(n : int,m : int) -> int:
     return n ^ m
 
-def nim_prod(x : int,y : int) -> int:
+def least_fermat(N : int) -> int:
+    '''
+    Find the least Fermat power <= N 
+    2 ** (2 ** n) <= N
+    '''
+    if N < 2:
+        raise ValueError('The lowest Fermat power is 2')
+    bit_log = N.bit_length() - 1
+    bit_log_log = bit_log.bit_length()-1
+    return 1 << (1 << bit_log_log)
+
+def nim_product(a : int, b : int) -> int:
     # first handle trivial cases
-    if x == 0 | y == 0:
+    if a == 0 or b == 0:
         return 0
-    elif x == 1:
-        return y
-    elif y == 1:
-        return x
-    
-    # next, use the rule for multiplying Fermat powers F=2 ** (2 ** n)
-    # if x < F, then nim_prod(x,F)= x*F   (ordinary product)
-    # and nim_prod(F,F) = 3*F/2
-    m = min(x,y)
-    M = max(x,y)
-    
-    if is_fermat_power(M):
-        # nim product of Fermat power with smaller is ordinary product
-        if m < M:
-            return m*M
-        else:
-            # nim square of fermat power x is 3x/2
-            return 3*M >> 1
-    elif is_power_of_two(M):
-        # if exponent is not power of 2, factor out 2's until it is
-        # M = (factored) * (2 ** exponent)
-        # we know at least one 2 needs to be pulled out        
-        exponent = 1
-        factored = M >> 1
-        while not is_fermat_power(factored):
-            factored >>= 1
-            exponent += 1
-        # now use formula for fermat power and associativity
-        # m* M = (m * factored) * (2 ** exponent) = (m * (2 ** exponent)) * factored
-        # we have to re-order the parentheses carefully to avoid infinite loop
-        intermediate = nim_prod(m, factored)
-        if intermediate == M:
-            intermediate = nim_prod(m, 1 << exponent)
-            return nim_prod(intermediate, factored)
-        return nim_prod(intermediate, 1 << exponent)
+    elif a == 1:
+        return b
+    elif b == 1:
+        return a
+    elif a == 2 and b == 2:
+        return 3
     else:
-        # otherwise, write it as the sum of powers of 2 and distribute
-        sum = 0
-        for index in range(M.bit_length()):
-            if M >> index & 1 == 1:
-                sum ^= nim_prod(m, 1 << index)
-        return sum 
+        # do euclidean division by greatest possible fermat power 
+        # a = q_a * F_a + r_a and b = q_b * F_b + r_b
+        F_a = least_fermat(a); F_b = least_fermat(b)
+        q_a = a // F_a ; q_b = b // F_b
+        r_a = a % F_a ; r_b = b % F_b
+
+        # if one the Fermat powers is greater than the other, then
+        # nim multiplication by it is the same as ordinary multiplication
+        if F_a < F_b:
+            return nim_product(a,q_b)*F_b ^ nim_product(a,r_b)
+        elif F_a > F_b:
+            return nim_product(q_a,b)*F_a ^ nim_product(r_a,b)
+        else:
+            # otherwise we have to distribute and use F_n ** 2 = 3 * F_n / 2
+            p_1 = nim_product(q_a,q_b)
+            p_2 = nim_product(r_a,r_b)
+            p_3 = nim_product(q_a ^ r_a, q_b ^ r_b)
+            p_4 = nim_product(q_a, F_a >> 1)
+            p_5 = p_3 ^ p_2
+            return p_5 * F_a ^ p_2 ^ p_4
+
+print(nim_product(2,4)) #

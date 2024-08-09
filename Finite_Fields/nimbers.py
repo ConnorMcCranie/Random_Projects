@@ -61,3 +61,5 @@ def nim_prod(x : int,y : int) -> int:
             if M >> index & 1 == 1:
                 sum ^= nim_prod(m, 1 << index)
         return sum 
+
+nim_prod(133,18)
