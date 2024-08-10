@@ -18,9 +18,10 @@ class Polynomial:
             remove trailing zeros from a list of coefficients
             '''
             reduced_coeffs = coeffs
-            if len(reduced_coeffs) == 1:
-                return reduced_coeffs
-            while len(reduced_coeffs)>1:
+            
+            while len(reduced_coeffs) >= 1:
+                if len(reduced_coeffs) == 1:
+                    return reduced_coeffs
                 if reduced_coeffs[-1] == 0.0:
                     reduced_coeffs.pop()
                 else:
