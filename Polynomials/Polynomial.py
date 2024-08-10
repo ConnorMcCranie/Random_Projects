@@ -18,6 +18,8 @@ class Polynomial:
             remove trailing zeros from a list of coefficients
             '''
             reduced_coeffs = coeffs
+            if len(reduced_coeffs) == 1:
+                return reduced_coeffs
             while len(reduced_coeffs)>1:
                 if reduced_coeffs[-1] == 0.0:
                     reduced_coeffs.pop()
@@ -88,17 +90,17 @@ class Polynomial:
     
    
     
-def poly_add(p : Polynomial, q : Polynomial ) -> Polynomial:
+def poly_add(p : Polynomial, q : Polynomial, add = (lambda x,y:x+y) ) -> Polynomial:
     '''
     add two polynomials
     '''
     n = max(p.deg, q.deg)
     p_coeffs = p.coeffs + [0]*(n - p.deg)
     q_coeffs = q.coeffs + [0]*(n - q.deg)
-    sum_coeffs = [p_coeffs[i] + q_coeffs[i] for i in range(n+1)]
+    sum_coeffs = [add(p_coeffs[i], q_coeffs[i]) for i in range(n+1)]
     return Polynomial(sum_coeffs, f'({p.name}+{q.name})' )
 
-def poly_mult(p : Polynomial, q : Polynomial ) -> Polynomial:
+def poly_mult(p : Polynomial, q : Polynomial, add = (lambda x,y: x+y), mult = (lambda x,y: x*y) ) -> Polynomial:
     '''
     multiply two polynomials
     '''
@@ -107,16 +109,16 @@ def poly_mult(p : Polynomial, q : Polynomial ) -> Polynomial:
     prod_coeffs = [0]*(n+m+1)
     for i in range(n+1):
         for j in range(m+1):
-            prod_coeffs[i+j] += p.coeffs[i]*q.coeffs[j]
+            prod_coeffs[i+j] = add(prod_coeffs[i+j], mult(p.coeffs[i],q.coeffs[j]))
     return Polynomial(prod_coeffs, f'({p.name}{q.name})')
 
 # debugging
-'''
+
 p = Polynomial([1, 1.0, 1,0.0], 'p')
 q = Polynomial([0.0,-1, 1, 0,0,0,0,0],'q')
 
 
-    
-r = poly_add(p, q)
-print(f'The sum of {p.poly_str} and {q.poly_str} is {r.poly_str} and their product is {poly_mult(p, q).poly_str}')
-'''
+add = lambda x,y: (x+y)%2
+mult = lambda x,y: (x*y)%2
+r = poly_add(p, q, add)
+print(f'The sum of {p.poly_str} and {q.poly_str} is {r.poly_str} and their product is {poly_mult(p, q,add,mult).poly_str}')
