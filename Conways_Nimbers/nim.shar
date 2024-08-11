@@ -1,0 +1,301 @@
+
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of shell archive."
+# Contents:  nimber.h nimber.c nimtest.c
+# Wrapped by eppstein@wormwood.ics.uci.edu on Thu Aug 18 10:20:25 1994
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f 'nimber.h' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'nimber.h'\"
+else
+echo shar: Extracting \"'nimber.h'\" \(648 characters\)
+sed "s/^X//" >'nimber.h' <<'END_OF_FILE'
+X// nimber - GF[2^2^k] as described by J.H. Conway
+X// David Eppstein, Columbia University, 19 Mar 1988
+X
+Xtypedef unsigned long proto_nimber;
+X
+Xclass nimber {
+X    proto_nimber val;
+X
+Xpublic:
+X    nimber(proto_nimber x) { val = x; }
+X    proto_nimber value() { return val; }
+X
+X    int operator== (nimber that) { return this->val == that.val; }
+X    int operator!= (nimber that) { return this->val != that.val; }
+X
+X    nimber square();
+X    nimber sqrt();
+X    nimber inverse();
+X
+X    nimber operator* (nimber);
+X    nimber operator+ (nimber that) { return nimber(this->val ^ that.val); }
+X    nimber operator/ (nimber that) { return (*this) * that.inverse(); }
+X};
+END_OF_FILE
+if test 648 -ne `wc -c <'nimber.h'`; then
+    echo shar: \"'nimber.h'\" unpacked with wrong size!
+fi
+# end of 'nimber.h'
+fi
+if test -f 'nimber.c' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'nimber.c'\"
+else
+echo shar: Extracting \"'nimber.c'\" \(5360 characters\)
+sed "s/^X//" >'nimber.c' <<'END_OF_FILE'
+X// nimber - GF[2^2^k] as described by J.H. Conway
+X// David Eppstein, Columbia University, 19 Mar 1988
+X//
+X// All multiplicative operations take time (gates) O(n^(log 3) log n)
+X// where n=2^k.  But this is not good enough to compete with implementations
+X// of GF[2^n] based on irreducible polynomials and FFT multiplication,
+X// which take time (gates) O(n polylog(n)) -- the hard part is reducing
+X// the 2n-bit result of a multiply to n bits, which can be done in log n
+X// stages, each stage using a multiply to half the number of excess bits.
+X
+X
+X#include "nimber.h"
+X
+X
+X// high_part and low_part - split nimber into half sets of bits
+X// combine - put the halves back together again
+X
+Xstatic inline proto_nimber exp(int level) { return 1 << level; }
+Xstatic inline proto_nimber mask(int level) { return exp(exp(level)) - 1; }
+X
+Xstatic inline proto_nimber
+Xhigh_part(proto_nimber x, int level) { return x >> exp(level); }
+X
+Xstatic inline proto_nimber
+Xlow_part(proto_nimber x, int level) { return x & mask(level); }
+X
+Xstatic inline proto_nimber
+Xcombine(proto_nimber x, proto_nimber y, int level)
+X{
+X    return (x << exp(level)) ^ y; // ^ not + so compiler has more opt chances
+X}
+X
+X
+X
+X// level() - first level at which high_part is zero
+X
+Xstatic int
+Xlevel(proto_nimber x)
+X{
+X    for (int i = 0; high_part(x,i) != 0; i++) ;
+X    return i;
+X}
+X
+X
+X
+X
+X// half_mult - multiply by exp(exp(level) - 1)
+X// 
+X// This is faster than general multiplication because of the simple
+X// structure of the multiplicand -- its high_part is the same structure
+X// at the next level down, and its low_part is zero.
+X//
+X// Time T(n) = O(n) + 3 T(n/2) = O(n^(log 3)).
+X//
+X// Can be done in O(n) bit vector ops by combining precomputed results
+X// for each bit, but that would be O(n^2) bit ops.
+X
+Xstatic proto_nimber
+Xhalf_mult(proto_nimber x, int level)
+X{
+X    if (--level < 0) return x;
+X    proto_nimber high = high_part(x,level);
+X    proto_nimber low = low_part(x,level);
+X    return combine(half_mult(high ^ low, level),
+X		   half_mult(half_mult(high, level), level),
+X		   level);
+X}
+X
+X
+X
+X
+X// square - sped up from general multiply because (a+b)^2 = a^2 + b^2
+X// Time T(n) = O(n^(log 3)) + 2 T(n/2) = O(n^(log 3)).
+X
+Xstatic proto_nimber
+Xnim_square(proto_nimber x, int level)
+X{
+X    if (--level < 0) return x;
+X    proto_nimber high = high_part(x, level);
+X    proto_nimber low = low_part(x, level);
+X    proto_nimber high_square = nim_square(high, level);
+X    return combine(high_square,
+X		   half_mult(high_square, level) ^ nim_square(low, level),
+X		   level);
+X}
+X
+Xnimber
+Xnimber::square()
+X{
+X    return nimber(nim_square(value(), level(value())));
+X}
+X
+X
+X
+X
+X// square root
+X// 
+X// Correctness can be seen by comparing this code to that for square().
+X// Note that all nimbers have square roots (proof: this code).
+X// Time T(n) = O(n^(log 3)), same as square().
+X
+Xstatic proto_nimber
+Xnim_sqrt(proto_nimber x, int level)
+X{
+X
+X    if (--level < 0) return x;
+X    proto_nimber high = high_part(x, level);
+X    proto_nimber low = low_part(x, level);
+X    return combine(nim_sqrt(high, level),
+X		  nim_sqrt(half_mult(high,level) ^ low, level),
+X		  level);
+X}
+X
+Xnimber
+Xnimber::sqrt()
+X{
+X    return nimber(nim_sqrt(value(), level(value())));
+X}
+X
+X
+X
+X
+X// multiplication of nimbers
+X//
+X// (ah,al)(bh,bl)
+X//     = (ah,0)(bh,0) + (ah,0)(0,bl) + (0,al)(bh,0) + (0,al)(0,bl)
+X//     = (ah bh, half_mult(ah bh)) + (ah bl,0) + (al bh,0) + (0,al bl)
+X//     = (ah bh + ah bl + al bh, half_mult(ah bh) + al bl)
+X//     = ((ah + al)(bh + bl) + al bl, half_mult(ah bh) + al bl)
+X//
+X// Time T(n) = O(n^(log 3)) + 3 T(n/2) = O(n^(log 3) log n).
+X
+Xstatic proto_nimber
+Xnim_times(proto_nimber x, proto_nimber y, int level)
+X{
+X    if (--level < 0) return x & y;
+X	// single bit multiplication is Boolean conjunction
+X
+X    proto_nimber x_high = high_part(x, level);
+X    proto_nimber x_low = low_part(x, level);
+X    proto_nimber y_high = high_part(y, level);
+X    proto_nimber y_low = low_part(y, level);
+X
+X    proto_nimber low_mult = nim_times(x_low, y_low, level);
+X    return combine(nim_times(x_high ^ x_low, y_high ^ y_low, level) ^ low_mult,
+X		   half_mult(nim_times(x_high,y_high,level),level) ^ low_mult,
+X		   level);
+X}
+X
+Xnimber
+Xnimber::operator* (nimber that)
+X{
+X    return nimber(nim_times(value(), that.value(),
+X			    level(value() | that.value())));
+X}
+X
+X
+X
+X
+X
+X// multiplicative inverse
+X//
+X// If we treat nimbers as column vectors of their high and low parts, then
+X// the product (ah,al) (bh,bl) can be found as the matrix multiplication
+X//
+X//         ( ah + al         ah )  ( bh )
+X//         ( half_mult(ah)   al )  ( bl )
+X//
+X// Multiplication forms a group, so the matrix is non-singular.  The inverse
+X// of (ah,al) is found by inverting the matrix, then multiplying by (0,1).
+X// When (ah,al) == 0 we return zero for lack of a better value.
+X// 
+X// Time T(n) = O(n^(log 3) log n) + T(n/2) = O(n^(log 3) log n).
+X
+Xstatic proto_nimber nim_inverse(proto_nimber x, int level)
+X{
+X    if (--level < 0) return x;
+X
+X    proto_nimber high = high_part(x, level);
+X    proto_nimber low = low_part(x, level);
+X
+X    proto_nimber ad = nim_times(high ^ low, low, level);
+X    proto_nimber bc = half_mult(nim_square(high, level), level);
+X    proto_nimber inv_det = nim_inverse(ad ^ bc, level);
+X    return combine(nim_times(high, inv_det, level),
+X		   nim_times(high ^ low, inv_det, level),
+X		   level);
+X}
+X
+Xnimber
+Xnimber::inverse()
+X{
+X    return nimber(nim_inverse(value(), level(value())));
+X}
+END_OF_FILE
+if test 5360 -ne `wc -c <'nimber.c'`; then
+    echo shar: \"'nimber.c'\" unpacked with wrong size!
+fi
+# end of 'nimber.c'
+fi
+if test -f 'nimtest.c' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'nimtest.c'\"
+else
+echo shar: Extracting \"'nimtest.c'\" \(1149 characters\)
+sed "s/^X//" >'nimtest.c' <<'END_OF_FILE'
+X/*
+X** Make nim multiplication, inverse, and square root tables.
+X** David Eppstein / Columbia University / 19 Mar 1988
+X*/
+X
+X#include "nimber.h"
+X#include <stdio.h>
+X
+X#define TABHEIGHT 16			/* 16 rows */
+X#define TABWIDTH 16			/* of 16 columns in table */
+X
+Xmain()
+X{
+X    int i, j;
+X
+X    /* multiplication table */
+X    printf ("  * |");
+X    for (j = 0; j < TABWIDTH; j++) printf ("%3d", j);
+X    printf ("\n----+");
+X    for (j = 0; j < TABWIDTH; j++) printf ("---");
+X    for (i = 0; i < TABHEIGHT; i++) {
+X	printf ("\n%3d |", i);
+X	for (j = 0; j < TABWIDTH; j ++)
+X	    printf("%3d", (nimber(i)*nimber(j)).value());
+X    }
+X
+X    /* unary functions: 1/x, sqrt(x) */
+X    printf ("\n\nx:      ");
+X    for (j = 0; j < TABWIDTH; j++) printf ("%3d", j);
+X    printf ("\n--------");
+X    for (j = 0; j < TABWIDTH; j++) printf ("---");
+X    printf ("\n1/x:    ");
+X    for (j = 0; j < TABWIDTH; j++) printf ("%3d", nimber(j).inverse().value());
+X    printf ("\nsqrt(x):");
+X    for (j = 0; j < TABWIDTH; j++) printf ("%3d", nimber(j).sqrt().value());
+X    printf ("\nx^2:    ");
+X    for (j = 0; j < TABWIDTH; j++) printf ("%3d", nimber(j).square().value());
+X    printf ("\n");
+X}
+END_OF_FILE
+if test 1149 -ne `wc -c <'nimtest.c'`; then
+    echo shar: \"'nimtest.c'\" unpacked with wrong size!
+fi
+# end of 'nimtest.c'
+fi
+echo shar: End of shell archive.
+exit 0
