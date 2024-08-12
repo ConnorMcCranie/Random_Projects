@@ -2,6 +2,8 @@
 use vandermond matrix to find a polynomal that interpolates a set of points
 '''
 import numpy as np
+from math import floor
+from math import ceil
 from Polynomial import Polynomial as Poly
 
 def vandermonde(x : np.ndarray) -> np.ndarray:
@@ -58,3 +60,22 @@ int_coeffs = [round(c,8) for c in t.coeffs]
 T = Poly(int_coeffs, 'T')
 #print(t.poly_str)
 
+# prime counting function
+def prime_count(n : int) -> int:
+    '''
+    count the number of primes less than or equal to n
+    '''
+    if n < 2:
+        return 0
+    primes = [2]
+    for i in range(3,n+1):
+        is_prime = True
+        for p in primes:
+            if i % p == 0:
+                is_prime = False
+                break
+        if is_prime:
+            primes.append(i)
+    return len(primes)
+
+print([n - prime_count(n) + floor(n/9)*(ceil(np.cos(n/np.e)+np.sin(n/420))-1)+floor(n/17)*((n-16)**2+2*0 **((n)%4)) for n in range(1,21)])
