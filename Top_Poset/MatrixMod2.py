@@ -84,7 +84,7 @@ def extendBasis2(subspace, space):
     return np.transpose(A[:, orth_pivots])
 
 def homology2(complex : dict[np.ndarray], basis : dict = None,
-              as_set : bool = True, ) -> dict[dict[np.ndarray]]:
+              as_set : bool = True) -> dict[dict[np.ndarray]]:
     ''' complex is a dict {n: d_n}, where d_n is the boundary map from
     C_n -> C_{n-1}. complex.items should be a contingous set of integers,
     starting at 0 for regular homology or -1 for reduced homology.

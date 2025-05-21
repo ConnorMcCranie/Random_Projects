@@ -1,3 +1,5 @@
+import numpy as np
+
 ''' First, define some funtions for integer to bit conversion '''
 
 def numtobits(n : int) -> list[int]:
@@ -20,11 +22,12 @@ class Simp:
     ''' Encodes an abstract simplicial complex using bitwise operations 
     on integers. For example, the line {{x0}, {x1}, {x0, x1}} would be 
     {1,10,11} in binary. Only need to feed in the maximal simplices, all
-    others can be infered. Right now only works for simplices with less
-    than 65 vertices. '''
+    others can be infered. You can put in the original point names to be
+    able to convert back from the binary representation. '''
 
     
-    def __init__(self, max_faces : int | list[int]) -> None:
+    def __init__(self, max_faces : int | list[int],
+                 labels : list | tuple = None) -> None:
         # determine which points occur in the complex
         total = 0
         for face in max_faces:
@@ -36,15 +39,32 @@ class Simp:
         self.dim : int = max([face.bit_count() for face in max_faces]) - 1
         self.maxs = max_faces
         self.faces : dict[set[int]] | None = None # compute only if necessary
+        self.labels = labels
         
-          
-    def getFaces(self, ordered : bool = False) -> dict[set | list]: 
+    def __repr__(self):
+        return self.maxs
+        
+    def as_points(self, simplex : int, as_set : bool = False) -> set | list:
+        ''' Takes a simplex in binary form and returns a list (or set) of
+        the corresponding labeled points'''
+        assert any([self.is_face(simplex, face) for face in self.maxs]), ( 
+        'That simplex does not belong to the simplicial complex')
+        self.labels = ([n for n in range(len(self.points))] if not self.labels 
+                        else self.labels) # if not labeled, just use 0, 1, 2, ...
+        bits = numtobits(simplex)
+        result = [self.labels[bit] for bit in bits]
+        return result if not as_set else set(result)
+             
+
+    def get_faces(self, ordered : bool = True) -> dict[set | list]: 
         # compute all faces from maximal ones
         if self.faces: 
             if not ordered:
                 return self.faces
             else: 
                 return {n: sorted(list(self.faces[n])) for n in self.faces}
+        
+        #----------------------------------------------------------------------
         ''' a bit faster if these funcs are in local scope'''
         def numtobits(n : int) -> list[int]:
             # given n, return a list of which bits are 1 in the binary
@@ -60,11 +80,13 @@ class Simp:
                 subs = [numtobits(sub) for sub in range(start, 1 << len(pts))]
                 subface = [[pts[i]   for i in sub] for sub in subs]
                 return {bitstonum(bits) for bits in subface}  
+        #----------------------------------------------------------------------
+
         faces : list[set] = [subfaces(max_face) for max_face in self.maxs]
-        self.faces : dict = {-1: set(), 0: self.points} # {} is -1 simplex :)
+        self.faces : dict = {0: self.points} 
         for n in range(1, self.dim + 1):
              self.faces[n] = {k for k in set.union(*faces) 
-                              if k.bit_count()==n+1}
+                              if k.bit_count() == n+1}
         if not ordered:
             return self.faces # {n: {simplices of dimension n}}
         # else, {n: [simplices of dimension n in increasing order]}
@@ -91,7 +113,7 @@ class Simp:
          in which case d_0 = [1, 1, ..., 1]. Otherwise, d_0 = [0, 0, ..., 0]
          '''
          num_pts = len(self.points)
-         faces = self.getFaces(ordered=True)
+         faces = self.get_faces(ordered=True)
          bdry = {0: np.full((1,num_pts), reduced, dtype=bool)}
          if not orient: # +1 = -1 %2  , so we can just do True and False
             for n in range(1, self.dim + 1):
@@ -104,5 +126,8 @@ class Simp:
               for n in range(1, self.dim + 1):
                    pass
          return bdry
-                    
+    
+    def is_face(self, simp1 : int, simp2 : int) -> bool:
+         ''' Returns whether simp1 is contained in simp2'''
+         return (simp1 & simp2) == simp1
             
