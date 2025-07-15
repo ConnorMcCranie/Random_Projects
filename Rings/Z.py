@@ -195,7 +195,7 @@ def int_log(N : int, base : int) -> int:
         N = N // (base ** (1 << level(N, base)))
     return total - 1
 
-def prime_power(n):
+def prime_power(n : int) -> list | bool:
     """
     Determine if n = p^k for some prime p and integer k > 0
     Returns (p, k) if n is a prime power, None otherwise
@@ -208,10 +208,10 @@ def prime_power(n):
     3. If no prime power found, check if n itself is prime (k=1 case)
     """
     if n <= 1:
-        return None
+        return False
     
     if n == 2:
-        return (2, 1)
+        return [2, 1]
     
     # Check for prime powers p^k where k >= 2
     max_exponent = int_log(n, 2)
@@ -220,5 +220,5 @@ def prime_power(n):
         root = is_power(n, k)
         if root:
             if is_prime(root):
-                return (root, k)
+                return [root, k]
     return False

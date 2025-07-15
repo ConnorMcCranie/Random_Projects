@@ -1,5 +1,5 @@
 class Poly:
-    def __init__(self, coeff, zero=0, one=1):
+    def __init__(self, coeff, zero : int | object = 0, one : int | object =1):
         ''' Class for representing polynomials via lists. The coefficients
         can be any class which has __add__(), sub, __mul__() , _eq__( , 0) and 
         __pow__( , -1) dunder methods. If you want coefficients in regular
@@ -247,7 +247,7 @@ class PolyMod(Poly):
                     return candidate
             return None
 
-    def factors(self, degree : int):
+    def factors(self, degree : int) -> list:
         result = []
         term = self
         if degree == 0: return [PolyMod([1], self.mod)]
@@ -260,7 +260,7 @@ class PolyMod(Poly):
                 break
         return result
     
-    def gcd(self, other):
+    def gcd(self, other) -> list:
         ''' Find the bezout coefficents x * self + y * other = gcd
         returns [x, y, gcd]'''
         # Initialize: [x, y, value]
