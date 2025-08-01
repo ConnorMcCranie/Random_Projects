@@ -57,7 +57,9 @@ class Poly:
             coeff[n] = const
             return Poly(coeff, self.zero, self.one)
         while numerator.deg >= other.deg and not numerator.is_zero:
-            coeff = numerator.coeff[-1] * other.coeff[-1] ** -1
+            inv = other.coeff[-1]
+            inv = inv if inv in {1, -1} else inv ** -1
+            coeff = numerator.coeff[-1] * inv
             term = monomial(numerator.deg - other.deg, coeff)
 
             quotient = quotient + term
@@ -193,7 +195,7 @@ class PolyMod(Poly):
         reduced_coeff = [c.repr for c in mod_coeff]
 
         self.id = Poly(reduced_coeff)(mod)
-        self.mod = mod
+        self.mod : int = mod
     
     def __add__(self, other):
         assert self.mod == other.mod, 'need same base field'
