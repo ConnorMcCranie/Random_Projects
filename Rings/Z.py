@@ -142,7 +142,7 @@ def integer_nth_root(n, k):
     
     # Binary search for the k-th root
     low = 1
-    high = int(n**(1.0/k)) + 2  # Add buffer for floating point errors
+    high = 1 <<  n.bit_length() // k + 1 # avoid floating point errors of n**1/k
     
     while low <= high:
         mid = (low + high) // 2
@@ -225,3 +225,17 @@ def prime_power(n : int) -> list | bool:
             if is_prime(root):
                 return [root, k]
     return False
+
+def gcd(n : int, m : int) -> list[int]:
+    ''' Find the bezout coefficents x * n + y * m = gcd
+    returns [x, y, gcd]'''
+    # Initialize: [x, y, value]
+    x0, y0, r0 = 1, 0, n
+    x1, y1, r1 = 0, 1, m
+    
+    while r1 > 0: # do (extended) euclidean algorithm
+        q = r0 // r1
+        x0, x1 = x1, x0 - q * x1
+        y0, y1 = y1, y0 - q * y1
+        r0, r1 = r1, r0 - q * r1        
+    return [x0, y0, r0]
