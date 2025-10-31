@@ -1,30 +1,30 @@
 class Z:
-    def __init__(self, mod : int, num : int = 0, ):
+    def __init__(self, mod: int, num: int = 0, ):
         ''' A class for representing finite cyclic groups.'''
         assert type(mod) == int and mod > 0, 'modulus is positive integer'
 
         self.repr = num % mod
         self.mod = mod
-        self.inv = ... # sentinel since `None` will mean not inverible
-    
+        self.inv = ...  # sentinel since `None` will mean not inverible
+
     def __add__(self, other) -> object:
         assert self.mod == other.mod, 'adding in cyclic group '\
                                       'needs to have same modulus'
         result = self.repr + other.repr % self.mod
         return Z(self.mod, result)
-    
+
     def __eq__(self, other) -> bool:
-        try: # if other is also a Z(n) object
+        try:  # if other is also a Z(n) object
             if self.repr == other.repr and self.mod == other.mod:
                 return True
             else:
                 return False
-        except: # allow comparison to integer
-            if type(other) == int: 
+        except:  # allow comparison to integer
+            if type(other) == int:
                 return (self.repr - other % self.mod) == 0
-            else: # all others return False
+            else:  # all others return False
                 return False
-    
+
     def __mul__(self, other) -> object:
         try:
             if self.mod == other.mod:
@@ -34,27 +34,32 @@ class Z:
                 return None
         except:
             assert type(other) == int, 'multiplication is supported with another'\
-            'element of cyclic group or with an integer'
+                'element of cyclic group or with an integer'
             return Z(self.mod, self.repr * other % self.mod)
 
-    def __pow__(self, power : int) -> object:
+    def __pow__(self, power: int) -> object:
         return Z(self.mod, pow(self.repr, power, self.mod))
 
     def __repr__(self):
         return str(self.repr)
-    
+
     def __sub__(self, other):
         return Z(self.mod, self.repr - other.repr % self.mod)
 
     def inverse(self) -> int | None:
         ''' Returns the inverse if it exists or None if it doesn't'''
-        if self.inv == ... : # not already computed
+        if self.inv == ...:  # not already computed
             try:
                 self.inv = pow(self.repr, -1, self.mod)
             except:
                 self.inv = None
         return self.inv
-    
+
+
+''' Some number theoretic helper functions'''
+##############################################################
+
+
 def miller_rabin(n, k=20):
     """
     Miller-Rabin primality test
@@ -69,31 +74,30 @@ def miller_rabin(n, k=20):
         return True
     if n % 2 == 0:
         return False
-    
+
     # Write n-1 as d * 2^r
     d = n - 1
     r = 0
     while d % 2 == 0:
         d //= 2
         r += 1
-    
+
     # Perform k rounds of testing
     for _ in range(k):
         a = random.randint(2, n - 2)
         x = pow(a, d, n)
-        
+
         if x == 1 or x == n - 1:
             continue
-        
+
         for _ in range(r - 1):
             x = pow(x, 2, n)
             if x == n - 1:
                 break
         else:
             return False
-    
-    return True
 
+    return True
 
 
 def is_prime(n):
@@ -103,18 +107,18 @@ def is_prime(n):
     if n < 2:
         return False
     small_primes = {
-                2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 
-                61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 
-                131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
-                197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 
-                263, 269, 271, 277, 281, 283, 293
-                }
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+        61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127,
+        131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
+        197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257,
+        263, 269, 271, 277, 281, 283, 293
+    }
     if n in small_primes:
         return True
     for p in small_primes:
-        if n % p == 0: 
+        if n % p == 0:
             return False
-    
+
     # Use deterministic test for small numbers
     if 300 < n < 1000:
         for i in small_primes:
@@ -124,9 +128,10 @@ def is_prime(n):
             if n % i == 0:
                 return False
         return True
-    
+
     # Use Miller-Rabin for larger numbers
     return miller_rabin(n)
+
 
 def integer_nth_root(n, k):
     """
@@ -139,23 +144,24 @@ def integer_nth_root(n, k):
         return 1
     if k == 1:
         return n
-    
+
     # Binary search for the k-th root
     low = 1
-    high = 1 <<  n.bit_length() // k + 1 # avoid floating point errors of n**1/k
-    
+    high = 1 << n.bit_length() // k + 1  # avoid floating point errors of n**1/k
+
     while low <= high:
         mid = (low + high) // 2
         mid_k = mid ** k
-        
+
         if mid_k == n:
             return mid
         elif mid_k < n:
             low = mid + 1
         else:
             high = mid - 1
-    
+
     return high
+
 
 def is_power(n, k):
     """
@@ -166,15 +172,16 @@ def is_power(n, k):
         return None
     if n == 1:
         return 1
-    
+
     root = integer_nth_root(n, k)
     if root ** k == n:
         return root
     return False
 
-def int_log(N : int, base : int) -> int:
+
+def int_log(N: int, base: int) -> int:
     ''' Returns p such that base ^ p <= N < base ^ (p+1)'''
-    def level(N : int, p : int = 2) -> int:
+    def level(N: int, p: int = 2) -> int:
         '''
         Returns the largest 'level' L (w.r.t. p) such that 
         p ** (2 ** L) <= N
@@ -182,10 +189,10 @@ def int_log(N : int, base : int) -> int:
         L = 0
         if N < p:
             return 0
-        while N // (p ** (1 << L)) != 0 :
+        while N // (p ** (1 << L)) != 0:
             L += 1
         return L-1
-    
+
     if N < base:
         return 0
     # for the highest power 'exp' s.t. base^exp <= N, find
@@ -198,11 +205,12 @@ def int_log(N : int, base : int) -> int:
         N = N // (base ** (1 << level(N, base)))
     return total - 1
 
-def prime_power(n : int) -> list | bool:
+
+def prime_power(n: int) -> list | bool:
     """
     Determine if n = p^k for some prime p and integer k > 0
     Returns (p, k) if n is a prime power, None otherwise
-    
+
     Algorithm:
     1. Handle special cases (n <= 1)
     2. For each possible exponent k from 2 to log₂(n):
@@ -212,13 +220,13 @@ def prime_power(n : int) -> list | bool:
     """
     if n <= 1:
         return False
-    
+
     if n == 2:
         return [2, 1]
-    
+
     # Check for prime powers p^k where k >= 2
     max_exponent = int_log(n, 2)
-    
+
     for k in range(1, max_exponent + 1):
         root = is_power(n, k)
         if root:
@@ -226,22 +234,24 @@ def prime_power(n : int) -> list | bool:
                 return [root, k]
     return False
 
-def gcd(n : int, m : int) -> list[int]:
+
+def gcd(n: int, m: int) -> list[int]:
     ''' Find the bezout coefficents x * n + y * m = gcd
     returns [x, y, gcd]'''
     # Initialize: [x, y, value]
     x0, y0, r0 = 1, 0, n
     x1, y1, r1 = 0, 1, m
-    
-    while r1 > 0: # do (extended) euclidean algorithm
+
+    while r1 > 0:  # do (extended) euclidean algorithm
         q = r0 // r1
         x0, x1 = x1, x0 - q * x1
         y0, y1 = y1, y0 - q * y1
-        r0, r1 = r1, r0 - q * r1        
+        r0, r1 = r1, r0 - q * r1
     return [x0, y0, r0]
 
-''' Some number theoretic helper functions'''
-def factor(n : int) -> list[list[int]]:
+
+def factor(n: int) -> list[list[int]]:
+    ''' returns [[p_1, e^1], ..., [p_n, e_n]] if n= prod_i p_i^(e_i)'''
     assert n >= 1, 'factoring is defined for positive integers'
     result = []
     num = n
@@ -256,7 +266,7 @@ def factor(n : int) -> list[list[int]]:
                         num //= p
                         div[1] += 1
                     result.append(div)
-                if num == 1: 
+                if num == 1:
                     return result
             raise ValueError('too big to factor by trial division')
     except:
@@ -266,10 +276,11 @@ def factor(n : int) -> list[list[int]]:
             assert type(p_n) == list
             return [p_n]
         else:
-            # smallest number not factorable this way is > 4 * 10^8 
+            # smallest number not factorable this way is > 4 * 10^8
             raise ValueError('too big to factor by trial division')
-    
-def mobius(n : int) -> int:
+
+
+def mobius(n: int) -> int:
     assert n >= 1, 'mobius function is defined for positive integers'
     factors = factor(n)
     if any([exp > 1 for prime, exp in factors]):
@@ -277,7 +288,8 @@ def mobius(n : int) -> int:
     else:
         return (-1) ** (len(factors) % 2)
 
-def phi(n : int) -> int:
+
+def phi(n: int) -> int:
     assert n >= 1, 'totient function is defined for positive integers'
     factors = factor(n)
     result = 1
@@ -285,7 +297,8 @@ def phi(n : int) -> int:
         result *= (prime - 1) * prime ** (exp - 1)
     return result
 
-def rad(n : int) -> int:
+
+def rad(n: int) -> int:
     assert n >= 1, 'radical function is defined for positive integers'
     factors = factor(n)
     result = 1
@@ -293,19 +306,22 @@ def rad(n : int) -> int:
         result *= prime
     return result
 
-def divs(n : int) -> list[int]:
+
+def divs(n: int) -> list[int]:
     assert n >= 1, 'divisors are defined for positive integers'
-    if n == 1: return [1]
+    if n == 1:
+        return [1]
     factors = factor(n)
     p, e = factors[0]
     divisors = [p ** k for k in range(e + 1)]
     for prime, exp in factors[1:]:
-        more_divs = [prime ** k * div for div in divisors 
+        more_divs = [prime ** k * div for div in divisors
                      for k in range(1, exp + 1)]
         divisors += more_divs
     return sorted(divisors)
 
-def val(n : int, p : int) -> int:
+
+def val(n: int, p: int) -> int:
     ''' max {k | p^k divides n}'''
     assert n >= 1, 'valuation is defined for positive integers'
     v, m = 0, n
@@ -314,26 +330,29 @@ def val(n : int, p : int) -> int:
         v += 1
     return v
 
-def ramanujan_sum(q : int, n : int) -> int:
+
+def ramanujan_sum(q: int, n: int) -> int:
     ''' returns sum_{gcd(a, q) = 1} e^(2 pi i a n / q), i.e. the sum of 
     the n^th powers of the primitive q^th roots of unity'''
     assert q >= 1, 'nth roots of unity is defined for n >= 1'
     result = 0
     for d in divs(gcd(q, n)[-1]):
         result += d * mobius(q // d)
-    return result    
+    return result
 
-def factorial(n : int) -> int:
+
+def factorial(n: int) -> int:
     assert n >= 0, 'factorial is defined for non-negative integers'
     prod = 1
     for k in range(2, n + 1):
         prod *= k
     return prod
 
-def binom(n : int, k : int) -> int:
+
+def binom(n: int, k: int) -> int:
     ''' binomial coefficient n choose k'''
     assert n >= 0, 'n choose k needs n >= 0'
-    if k > n or k < 0: 
+    if k > n or k < 0:
         return 0
     numerator = 1
     for i in range(k + 1, n + 1):
