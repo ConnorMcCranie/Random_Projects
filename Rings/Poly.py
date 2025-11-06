@@ -1,17 +1,17 @@
 class Poly:
-    def __init__(self, coeff, zero : int | object = 0, one : int | object =1):
+    def __init__(self, coeff, zero: int | object = 0, one: int | object = 1):
         ''' Class for representing polynomials via lists. The coefficients
         can be any class which has __add__(), sub, __mul__() , _eq__( , 0) and 
         __pow__( , -1) dunder methods. If you want coefficients in regular
         integers or reals or complex, it's much more efficient to use 
         numpy, sympy, etc. instead
-        
+
         self.zero is the zero element of the ring'''
         # trim off excess zeroes
         n = len(coeff)
-        if n == 0: # treat empty list as zero polynomial
+        if n == 0:  # treat empty list as zero polynomial
             coeff.append(zero)
-            n = 1 
+            n = 1
         is_zero = False
         for c in reversed(coeff):
             if c == zero:
@@ -21,7 +21,7 @@ class Poly:
                 is_zero = True
                 break
             else:
-                break          
+                break
         self.coeff = coeff[:n]
         self.deg = n-1
         self.is_zero = is_zero
@@ -50,15 +50,16 @@ class Poly:
 
     def __floordiv__(self, other):
         assert self.zero == other.zero, 'need to have the same coefficient field'
-        numerator = Poly(self.coeff, self.zero, self.one) # copy
+        numerator = Poly(self.coeff, self.zero, self.one)  # copy
         quotient = Poly([self.zero], self.zero, self.one)
+
         def monomial(n, const):
             coeff = [self.zero for _ in range(n+1)]
             coeff[n] = const
             return Poly(coeff, self.zero, self.one)
         while numerator.deg >= other.deg and not numerator.is_zero:
             inv = other.coeff[-1]
-            inv = inv if inv in {1, -1} else inv ** -1
+            inv = inv if inv == 1 or inv == -1 else inv ** -1
             coeff = numerator.coeff[-1] * inv
             term = monomial(numerator.deg - other.deg, coeff)
 
@@ -76,7 +77,7 @@ class Poly:
         return self - other * (self // other)
 
     def __mul__(self, other):
-        try: # scalar multiplication
+        try:  # scalar multiplication
             result = [self.coeff[n] * other for n in range(self.deg + 1)]
             return Poly(result, self.zero, self.one)
         except:
@@ -87,12 +88,12 @@ class Poly:
                 for k in range(n + 1):
                     if k < len(p) and n - k < len(q):
                         prod[n] = prod[n] + p[k] * q[n - k]
-            return Poly(prod, self.zero, self.one)     
+            return Poly(prod, self.zero, self.one)
 
-    def __pow__(self, p : int):
+    def __pow__(self, p: int):
         copy = self
-        if p >= 0: # binary exponentiation by squaring
-            result = Poly([self.one], self.zero, self.one) # identity
+        if p >= 0:  # binary exponentiation by squaring
+            result = Poly([self.one], self.zero, self.one)  # identity
             while p > 0:
                 if p & 1:
                     result = result * copy
@@ -100,49 +101,50 @@ class Poly:
                 p >>= 1
             return result
         else:
-            raise ValueError('power needs to be a non-negative integer')      
+            raise ValueError('power needs to be a non-negative integer')
 
     def __repr__(self):
         return str(self.coeff)
-        
+
     def __sub__(self, other):
         assert self.zero == other.zero, 'need to have the same coefficient field'
         small, big = sorted([self, other], key=lambda x: x.deg)
         pad = [small.coeff[n] for n in range(small.deg + 1)]
         pad += [self.zero for _ in range(big.deg - small.deg)]
-        if self.deg <= other.deg: 
+        if self.deg <= other.deg:
             diff = [pad[n] - other.coeff[n] for n in range(len(pad))]
         else:
             diff = [self.coeff[n] - pad[n] for n in range(len(pad))]
         return Poly(diff, self.zero, self.one)
-    
+
+
 class Z:
-    def __init__(self, mod : int, num : int = 0, ):
+    def __init__(self, mod: int, num: int = 0, ):
         ''' A class for representing finite cyclic groups.'''
         assert type(mod) == int and mod > 0, 'modulus is positive integer'
 
         self.repr = num % mod
         self.mod = mod
-        self.inv = ... # sentinel since `None` will mean not inverible
-    
+        self.inv = ...  # sentinel since `None` will mean not inverible
+
     def __add__(self, other) -> object:
         assert self.mod == other.mod, 'adding in cyclic group '\
                                       'needs to have same modulus'
         result = self.repr + other.repr % self.mod
         return Z(self.mod, result)
-    
+
     def __eq__(self, other) -> bool:
-        try: # if other is also a Z(n) object
+        try:  # if other is also a Z(n) object
             if self.repr == other.repr and self.mod == other.mod:
                 return True
             else:
                 return False
-        except: # allow comparison to integer
-            if type(other) == int: 
+        except:  # allow comparison to integer
+            if type(other) == int:
                 return (self.repr - other % self.mod) == 0
-            else: # all others return False
+            else:  # all others return False
                 return False
-    
+
     def __mul__(self, other) -> object:
         try:
             if self.mod == other.mod:
@@ -152,35 +154,38 @@ class Z:
                 return None
         except:
             assert type(other) == int, 'multiplication is supported with another'\
-            'element of cyclic group or with an integer'
+                'element of cyclic group or with an integer'
             return Z(self.mod, self.repr * other % self.mod)
 
-    def __pow__(self, power : int) -> object:
+    def __pow__(self, power: int) -> object:
         return Z(self.mod, pow(self.repr, power, self.mod))
 
     def __repr__(self):
         return str(self.repr)
-    
+
     def __sub__(self, other):
         return Z(self.mod, self.repr - other.repr % self.mod)
 
     def inverse(self) -> int | None:
         ''' Returns the inverse if it exists or None if it doesn't'''
-        if self.inv == ... : # not already computed
+        if self.inv == ...:  # not already computed
             try:
                 self.inv = pow(self.repr, -1, self.mod)
             except:
                 self.inv = None
         return self.inv
-    
+
+
 class PolyMod(Poly):
     ''' Polynomials with coefficients in finite cyclic group'''
-    def __init__(self, data : list[int] | int, mod : int):
+
+    def __init__(self, data: list[int] | int, mod: int):
         if type(data) == list:
             mod_coeff = [Z(mod, n) for n in data]
         elif type(data) == int:
             assert data >= 0, 'integer input should be non-negative'
-            def base_decomp(base : int, num : int) -> list[int]:
+
+            def base_decomp(base: int, num: int) -> list[int]:
                 ''' write an integer in a given base'''
                 decomp = []
                 while num > 0:
@@ -195,51 +200,53 @@ class PolyMod(Poly):
         reduced_coeff = [c.repr for c in mod_coeff]
 
         self.id = Poly(reduced_coeff)(mod)
-        self.mod : int = mod
-    
+        self.mod: int = mod
+
     def __add__(self, other):
         assert self.mod == other.mod, 'need same base field'
         sum = super().__add__(other)
         coeff = [c.repr for c in sum.coeff]
         return PolyMod(coeff, self.mod)
-    
+
     def __floordiv__(self, other):
         assert self.mod == other.mod, 'need same base field'
         div = super().__floordiv__(other)
         coeff = [c.repr for c in div.coeff]
         return PolyMod(coeff, self.mod)
-    
+
     def __mod__(self, other):
         assert self.mod == other.mod, 'need same base field'
         remainder = super().__mod__(other)
         coeff = [c.repr for c in remainder.coeff]
         return PolyMod(coeff, self.mod)
-    
+
     def __mul__(self, other):
         assert self.mod == other.mod, 'need same base field'
         prod = super().__mul__(other)
         coeff = [c.repr for c in prod.coeff]
         return PolyMod(coeff, self.mod)
-    
-    def __pow__(self, p : int):
+
+    def __pow__(self, p: int):
         power = super().__pow__(p)
         coeff = [c.repr for c in power.coeff]
         return PolyMod(coeff, self.mod)
-    
+
     def __sub__(self, other):
         assert self.mod == other.mod, 'need same base field'
         sub = super().__sub__(other)
         coeff = [c.repr for c in sub.coeff]
-        return PolyMod(coeff, self.mod)       
+        return PolyMod(coeff, self.mod)
 
-    def factor(self, degree : int):
+    def factor(self, degree: int):
         '''uses brute force approach to find the least monic polynomial 
         of a given degree dividing `self`, or `None` if no such factor
         exists '''
-        assert type(degree)==int and degree >=0, (
+        assert type(degree) == int and degree >= 0, (
             'degree of factor should be non-negative integer')
-        if degree == 0: return PolyMod([1], self.mod)
-        elif degree > self.deg: return None
+        if degree == 0:
+            return PolyMod([1], self.mod)
+        elif degree > self.deg:
+            return None
         else:
             p, d = self.mod, degree
             for n in range(p**d + 1, 2 * p**d):
@@ -249,10 +256,11 @@ class PolyMod(Poly):
                     return candidate
             return None
 
-    def factors(self, degree : int) -> list:
+    def factors(self, degree: int) -> list:
         result = []
         term = self
-        if degree == 0: return [PolyMod([1], self.mod)]
+        if degree == 0:
+            return [PolyMod([1], self.mod)]
         for iter in range(self.deg // degree):
             factor = term.factor(degree)
             if factor != None:
@@ -261,7 +269,7 @@ class PolyMod(Poly):
             else:
                 break
         return result
-    
+
     def gcd(self, other) -> list:
         ''' Find the bezout coefficents x * self + y * other = gcd
         returns [x, y, gcd]'''
@@ -269,27 +277,31 @@ class PolyMod(Poly):
         zero, one = [PolyMod([i], self.mod) for i in range(2)]
         x0, y0, r0 = one, zero, self
         x1, y1, r1 = zero, one, other
-        
-        while not r1.is_zero: # do (extended) euclidean algorithm
+
+        while not r1.is_zero:  # do (extended) euclidean algorithm
             q = r0 // r1
             x0, x1 = x1, x0 - q * x1
             y0, y1 = y1, y0 - q * y1
-            r0, r1 = r1, r0 - q * r1        
+            r0, r1 = r1, r0 - q * r1
         return [x0, y0, r0]
-    
+
     def is_irred(self) -> bool:
         # requires prime modulus
         n, p = self.deg, self.mod
-        if n == 0: return False
-        elif n == 1: return True
+        if n == 0:
+            return False
+        elif n == 1:
+            return True
         else:
             divs = [k for k in range(1, int(n**.5 + 1)) if n % k == 0]
-            def frob(k): # x^(p^k) - x
+
+            def frob(k):  # x^(p^k) - x
                 poly = [0 for _ in range(p**k + 1)]
                 poly[p**k], poly[1] = 1, -1
                 return PolyMod(poly, p)
             for div in divs:
                 poly = frob(div)
                 d = self.gcd(poly)[2]
-                if d.deg > 0: return False
+                if d.deg > 0:
+                    return False
             return (frob(n) % self).is_zero
