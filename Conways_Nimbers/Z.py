@@ -1,15 +1,20 @@
 class Z:
-    def __init__(self, mod: int, num: int = 0, ):
-        ''' A class for representing finite cyclic groups.'''
-        assert type(mod) == int and mod > 0, 'modulus is positive integer'
+    def __init__(
+        self,
+        mod: int,
+        num: int = 0,
+    ):
+        """A class for representing finite cyclic groups."""
+        assert type(mod) == int and mod > 0, "modulus is positive integer"
 
         self.repr = num % mod
         self.mod = mod
         self.inv = ...  # sentinel since `None` will mean not inverible
 
     def __add__(self, other) -> object:
-        assert self.mod == other.mod, 'adding in cyclic group '\
-                                      'needs to have same modulus'
+        assert self.mod == other.mod, (
+            "adding in cyclic group " "needs to have same modulus"
+        )
         result = self.repr + other.repr % self.mod
         return Z(self.mod, result)
 
@@ -30,11 +35,13 @@ class Z:
             if self.mod == other.mod:
                 return Z(self.mod, self.repr * other.repr % self.mod)
             else:
-                print('need to have same modulus to multiply')
+                print("need to have same modulus to multiply")
                 return None
         except:
-            assert type(other) == int, 'multiplication is supported with another'\
-                'element of cyclic group or with an integer'
+            assert type(other) == int, (
+                "multiplication is supported with another"
+                "element of cyclic group or with an integer"
+            )
             return Z(self.mod, self.repr * other % self.mod)
 
     def __pow__(self, power: int) -> object:
@@ -47,7 +54,7 @@ class Z:
         return Z(self.mod, self.repr - other.repr % self.mod)
 
     def inverse(self) -> int | None:
-        ''' Returns the inverse if it exists or None if it doesn't'''
+        """Returns the inverse if it exists or None if it doesn't"""
         if self.inv == ...:  # not already computed
             try:
                 self.inv = pow(self.repr, -1, self.mod)
@@ -56,7 +63,7 @@ class Z:
         return self.inv
 
 
-''' Some number theoretic helper functions'''
+""" Some number theoretic helper functions"""
 ##############################################################
 
 
@@ -107,11 +114,68 @@ def is_prime(n):
     if n < 2:
         return False
     small_primes = {
-        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-        61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127,
-        131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193,
-        197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257,
-        263, 269, 271, 277, 281, 283, 293
+        2,
+        3,
+        5,
+        7,
+        11,
+        13,
+        17,
+        19,
+        23,
+        29,
+        31,
+        37,
+        41,
+        43,
+        47,
+        53,
+        59,
+        61,
+        67,
+        71,
+        73,
+        79,
+        83,
+        89,
+        97,
+        101,
+        103,
+        107,
+        109,
+        113,
+        127,
+        131,
+        137,
+        139,
+        149,
+        151,
+        157,
+        163,
+        167,
+        173,
+        179,
+        181,
+        191,
+        193,
+        197,
+        199,
+        211,
+        223,
+        227,
+        229,
+        233,
+        239,
+        241,
+        251,
+        257,
+        263,
+        269,
+        271,
+        277,
+        281,
+        283,
+        293,
     }
     if n in small_primes:
         return True
@@ -124,7 +188,7 @@ def is_prime(n):
         for i in small_primes:
             if n % i == 0:
                 return False
-        for i in range(301, min(2 + int(n**.5), n), 2):
+        for i in range(301, min(2 + int(n**0.5), n), 2):
             if n % i == 0:
                 return False
         return True
@@ -151,7 +215,7 @@ def integer_nth_root(n, k):
 
     while low <= high:
         mid = (low + high) // 2
-        mid_k = mid ** k
+        mid_k = mid**k
 
         if mid_k == n:
             return mid
@@ -174,24 +238,25 @@ def is_power(n, k):
         return 1
 
     root = integer_nth_root(n, k)
-    if root ** k == n:
+    if root**k == n:
         return root
     return False
 
 
 def int_log(N: int, base: int) -> int:
-    ''' Returns p such that base ^ p <= N < base ^ (p+1)'''
+    """Returns p such that base ^ p <= N < base ^ (p+1)"""
+
     def level(N: int, p: int = 2) -> int:
-        '''
-        Returns the largest 'level' L (w.r.t. p) such that 
+        """
+        Returns the largest 'level' L (w.r.t. p) such that
         p ** (2 ** L) <= N
-        '''
+        """
         L = 0
         if N < p:
             return 0
         while N // (p ** (1 << L)) != 0:
             L += 1
-        return L-1
+        return L - 1
 
     if N < base:
         return 0
@@ -199,11 +264,24 @@ def int_log(N: int, base: int) -> int:
     # the largest power of 2 that is less than or equal to exp
     total = 1 << level(N, base)
     # now divide N to recursively find the binary expansion of exp
-    N = N // (base ** total)
+    N = N // (base**total)
     while N != 0:
         total += 1 << level(N, base)
         N = N // (base ** (1 << level(N, base)))
     return total - 1
+
+
+def lcm(*args):
+    if len(args) == 0:
+        return 0
+    elif len(args) == 1:
+        return args[0]
+    else:
+        n, m, *rest = args
+    mult = n * m // gcd(n, m)[-1]
+    for num in rest:
+        mult = mult * num // gcd(mult, num)[-1]
+    return mult
 
 
 def prime_power(n: int) -> list | bool:
@@ -236,8 +314,8 @@ def prime_power(n: int) -> list | bool:
 
 
 def gcd(n: int, m: int) -> list[int]:
-    ''' Find the bezout coefficents x * n + y * m = gcd
-    returns [x, y, gcd]'''
+    """Find the bezout coefficents x * n + y * m = gcd
+    returns [x, y, gcd]"""
     # Initialize: [x, y, value]
     x0, y0, r0 = 1, 0, n
     x1, y1, r1 = 0, 1, m
@@ -251,12 +329,12 @@ def gcd(n: int, m: int) -> list[int]:
 
 
 def factor(n: int) -> list[list[int]]:
-    ''' returns [[p_1, e^1], ..., [p_n, e_n]] if n= prod_i p_i^(e_i)'''
-    assert n >= 1, 'factoring is defined for positive integers'
+    """returns [[p_1, e^1], ..., [p_n, e_n]] if n= prod_i p_i^(e_i)"""
+    assert n >= 1, "factoring is defined for positive integers"
     result = []
     num = n
     try:
-        with open('small_primes.txt') as file:
+        with open("small_primes.txt") as file:
             for prime in file:
                 p = int(prime[:-1])
                 if num % p == 0:
@@ -268,7 +346,7 @@ def factor(n: int) -> list[list[int]]:
                     result.append(div)
                 if num == 1:
                     return result
-            raise ValueError('too big to factor by trial division')
+            raise ValueError("too big to factor by trial division")
     except:
         if is_prime(num):
             return [[num, 1]]
@@ -277,11 +355,11 @@ def factor(n: int) -> list[list[int]]:
             return [p_n]
         else:
             # smallest number not factorable this way is > 4 * 10^8
-            raise ValueError('too big to factor by trial division')
+            raise ValueError("too big to factor by trial division")
 
 
 def mobius(n: int) -> int:
-    assert n >= 1, 'mobius function is defined for positive integers'
+    assert n >= 1, "mobius function is defined for positive integers"
     factors = factor(n)
     if any([exp > 1 for prime, exp in factors]):
         return 0
@@ -290,7 +368,7 @@ def mobius(n: int) -> int:
 
 
 def phi(n: int) -> int:
-    assert n >= 1, 'totient function is defined for positive integers'
+    assert n >= 1, "totient function is defined for positive integers"
     factors = factor(n)
     result = 1
     for prime, exp in factors:
@@ -299,7 +377,7 @@ def phi(n: int) -> int:
 
 
 def rad(n: int) -> int:
-    assert n >= 1, 'radical function is defined for positive integers'
+    assert n >= 1, "radical function is defined for positive integers"
     factors = factor(n)
     result = 1
     for prime, exp in factors:
@@ -308,22 +386,21 @@ def rad(n: int) -> int:
 
 
 def divs(n: int) -> list[int]:
-    assert n >= 1, 'divisors are defined for positive integers'
+    assert n >= 1, "divisors are defined for positive integers"
     if n == 1:
         return [1]
     factors = factor(n)
     p, e = factors[0]
-    divisors = [p ** k for k in range(e + 1)]
+    divisors = [p**k for k in range(e + 1)]
     for prime, exp in factors[1:]:
-        more_divs = [prime ** k * div for div in divisors
-                     for k in range(1, exp + 1)]
+        more_divs = [prime**k * div for div in divisors for k in range(1, exp + 1)]
         divisors += more_divs
     return sorted(divisors)
 
 
 def val(n: int, p: int) -> int:
-    ''' max {k | p^k divides n}'''
-    assert n >= 1, 'valuation is defined for positive integers'
+    """max {k | p^k divides n}"""
+    assert n >= 1, "valuation is defined for positive integers"
     v, m = 0, n
     while m % p == 0:
         m //= p
@@ -332,9 +409,9 @@ def val(n: int, p: int) -> int:
 
 
 def ramanujan_sum(q: int, n: int) -> int:
-    ''' returns sum_{gcd(a, q) = 1} e^(2 pi i a n / q), i.e. the sum of 
-    the n^th powers of the primitive q^th roots of unity'''
-    assert q >= 1, 'nth roots of unity is defined for n >= 1'
+    """returns sum_{gcd(a, q) = 1} e^(2 pi i a n / q), i.e. the sum of
+    the n^th powers of the primitive q^th roots of unity"""
+    assert q >= 1, "nth roots of unity is defined for n >= 1"
     result = 0
     for d in divs(gcd(q, n)[-1]):
         result += d * mobius(q // d)
@@ -342,7 +419,7 @@ def ramanujan_sum(q: int, n: int) -> int:
 
 
 def factorial(n: int) -> int:
-    assert n >= 0, 'factorial is defined for non-negative integers'
+    assert n >= 0, "factorial is defined for non-negative integers"
     prod = 1
     for k in range(2, n + 1):
         prod *= k
@@ -350,8 +427,8 @@ def factorial(n: int) -> int:
 
 
 def binom(n: int, k: int) -> int:
-    ''' binomial coefficient n choose k'''
-    assert n >= 0, 'n choose k needs n >= 0'
+    """binomial coefficient n choose k"""
+    assert n >= 0, "n choose k needs n >= 0"
     if k > n or k < 0:
         return 0
     numerator = 1
