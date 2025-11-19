@@ -349,7 +349,8 @@ def factor(n: int) -> list[list[int]]:
             raise ValueError("too big to factor by trial division")
     except:
         if is_prime(num):
-            return [[num, 1]]
+            result.append([num, 1])
+            return result
         elif p_n := prime_power(num):
             assert type(p_n) == list
             return [p_n]
